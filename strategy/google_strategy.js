@@ -1,9 +1,20 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20');
 const keys = require('../config/keys'); // importing the keys
-
 const User = require('../model/userModel');
 
+
+// serializind and deserializing 
+
+passport.serializeUser((user,done)=>{        // encrypting the info
+    done(null,user.id)
+})
+
+passport.deserializeUser((id,done)=>{    // decrypting the info
+    User.findById(id).then((user)=>{
+        done(null,user)
+    })
+})
 
 passport.use(new GoogleStrategy({
     clientID:keys.googleClientID,
@@ -16,12 +27,14 @@ passport.use(new GoogleStrategy({
         googleId:profile.id
     }).then((existUser)=>{
         if(existUser){
+            done(null,existUser);
         }
         else{
-           const user = new User({  // creating a new user
+            new User({  // creating a new user
                googleId:profile.id
-           });
-           user.save()  // saving the data in database
+           }).save().then((user)=>{
+               done(null,user);
+           })  // saving the data in database
         }
     })
 }
